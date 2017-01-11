@@ -1,0 +1,7 @@
+{
+	"enabled": false,
+	"advanced_api": false,
+	"debug": {
+		"show_ram_usage": false
+	}
+}
