@@ -12,17 +12,14 @@
 var ParticleType = ModAPI.requireGlobal("ParticleType");
 var MobEffect = ModAPI.requireGlobal("MobEffect");
 
-if (__config__.access("debug.show_ram_usage")){
-	var ctx = UI.getMcContext();
-	var info = new android.app.ActivityManager.MemoryInfo();
-	var activityManager = ctx.getSystemService(android.content.Context.ACTIVITY_SERVICE);
-	var MEGABYTE = 1048576;
-	Callback.addCallback("tick", function(){
-		activityManager.getMemoryInfo(info);
-		Game.tipMessage("RAM info: " + parseInt(info.availMem / MEGABYTE) + "/" + parseInt(info.totalMem / MEGABYTE));
-	});
+__config__.checkAndRestore({
+	graphics: {
+		advanced_shaders: false
+	}
+})
+
+if (getCoreAPILevel() >= 6){
+	var resources = Resources.getResourceList();
+	resources["shaders_ultra.zip"] = __config__.access("graphics.advanced_shaders");
+	Resources.setResourceList(resources);
 }
-
-
-
-//UI.testUI(Recipes.getWorkbenchUI());

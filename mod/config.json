@@ -1,7 +1,7 @@
 {
-	"enabled": false,
-	"advanced_api": false,
-	"debug": {
-		"show_ram_usage": false
+	"enabled": true,
+	"show_resource_errors": true,
+	"graphics": {
+		"advanced_shaders": false
 	}
 }
