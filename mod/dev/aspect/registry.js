@@ -12,7 +12,6 @@ var AspectRegistry = {
 			this.aspectNames.push(aspect.name);
 			this.aspects[aspect.name] = aspect;
 			LiquidRegistry.registerLiquid("essence_" + aspect.name, "essence of " + aspect.name, [this.getAspectScale(aspect.name, true)]);
-			//AspectRegistry.setResearched(aspect.name);
 		}
 		else{
 			Logger.Log("no aspect name attached", "ERROR");

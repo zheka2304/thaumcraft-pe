@@ -82,7 +82,6 @@ function AuraNode(x, y, z){
 	this.provideOvercharge = function(power){
 		if (Math.abs(power) > .3){
 			Game.tipMessage("aura overcharged, hold on");
-			
 		}
 		if (Math.random() < .04){
 			var item = this.extractOverchargedItem();
@@ -95,8 +94,6 @@ function AuraNode(x, y, z){
 			
 			coords.y += 1.05;
 			if (item){
-				//Logger.Log(item.id + ", " + item.data, "THAUM");
-				//Logger.flush();
 				this.auraOvercharge *= .9;
 				try{
 					ParticleAnimation.FadeBolt.directedBolt(this.coords, coords, 3, 3, 2);
@@ -125,14 +122,6 @@ function AuraNode(x, y, z){
 			this.auraOvercharge *= .994;
 			this.provideOvercharge(this.auraOvercharge);
 		}
-		/*
-		if (this.__age == 5){
-			this.aspectStorage.addEssenceByName("ignis", 50);
-			this.aspectStorage.addEssenceByName("aqua", 50);
-			this.aspectStorage.addEssenceByName("terra", 50);
-			this.aspectStorage.addEssenceByName("aer", 50);
-			this.aspectStorage.addEssenceByName("flux", 50);
-		}*/
 		
 		if (this.__age % 20 != 0){
 			return;
@@ -227,7 +216,6 @@ function AuraNode(x, y, z){
 	/* returns random reaction source group for this node */
 	this.generateReactionSourceGroup = function(essenceCount){
 		var names = this.findEssences(essenceCount);
-		//Debug.message(essenceCount + ":" + names);
 		return this.aspectStorage.getSourceGroup(names);
 	}
 	
@@ -235,7 +223,7 @@ function AuraNode(x, y, z){
 	this.startReactionAt = function(x, y, z){
 		var sourceGroup = this.generateReactionSourceGroup(3);
 		var reaction = new AspectReaction(sourceGroup);
-		reaction.setMaxAge(1000 + Math.random() * 500);
+		reaction.setMaxAge(1500 + Math.random() * 1000);
 		reaction.setSpeed(0.15);
 		reaction.setParentNode(this);
 		reaction.loadAt(x, y, z);
@@ -252,11 +240,11 @@ function AuraNode(x, y, z){
 	}
 	
 	this.tickMagic = function(){
-		if (this.__age % 180 == 0 && Math.random() < .1){
+		if (this.__age % 300 == 0 && Math.random() < .1){
 			this.startRandomReaction();
 		}
 		
-		if (this.isInteractive && this.__age % 40 == 0 && Math.random() < .8){
+		if (this.isInteractive && this.__age % 160 == 0 && Math.random() < .3){
 			MagicInteraction.executeRandomNodeInteraction(this);
 		}
 	}

@@ -2,6 +2,15 @@
 	"enabled": true,
 	"show_resource_errors": true,
 	"graphics": {
-		"advanced_shaders": false
-	}
+		"advanced_shaders": false,
+		"particle_detalization_level": 1,
+		"render_distance": {
+			"minor": 32,
+			"major": 64
+		}
+	},
+	"aura": {
+		"super_fast_evolution": false
+	},
+	"enable_cheats": true
 }

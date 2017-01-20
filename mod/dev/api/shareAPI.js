@@ -1,6 +1,6 @@
 var ThaumAddonAPI = {
 	registerAddon: function(name, author){
-		Logger.Log("thaumcraft pe addon registred and loaded: " + name + (author ? " by " + author : "") + "\naddon core: thaumcraft addon API & Core Engine API\nCore Engine API level: " + getCoreAPILevel(), "THAUMCRAFT");
+		Logger.Log("thaumcraft pe addon registred and loaded: " + name + (author ? " by " + author : "") + "\naddon core: thaumcraft addon API & Core Engine API\nCore Engine API level: " + getCoreAPILevel(), LOGGER_TAG);
 	},
 	
 	requireThaumcraftGlobal: function(name){
@@ -31,5 +31,5 @@ ModAPI.registerAPI("ThaumAPICore", ThaumAPI);
 ModAPI.registerAPI("ThaumAPI", ThaumAddonAPI);
 
 ModAPI.addAPICallback("ThaumAPI", function(){
-	Logger.Log("Thaumсraft API is registred and can be accessed by ModAPI.requireAPI(\"ThaumAPI\")", "THAUMCRAFT");
+	Logger.Log("Thaumсraft API is registred and can be accessed by ModAPI.requireAPI(\"ThaumAPI\")", LOGGER_TAG);
 });

@@ -66,5 +66,6 @@ ui/wand.js
 ui/wand-spells.js
 ui/big-text.js
 
+util/commands.js
 
 api/shareAPI.js

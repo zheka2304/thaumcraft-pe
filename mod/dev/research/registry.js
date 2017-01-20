@@ -49,6 +49,18 @@ var ResearchRegistry = {
 		return false;
 	},
 	
+	setResearched: function(name){
+		var research = this.getResearch(name);
+		if (research){
+			if (research.isBasic){
+				return;
+			}
+			for (var i in research.aspectNames){
+				research.progress[research.aspectNames[i]] = 1;
+			}
+		}
+	},
+	
 	isVisible: function(name){
 		var research = this.getResearch(name);
 		if (research){
