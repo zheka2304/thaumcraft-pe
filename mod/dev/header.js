@@ -31,7 +31,7 @@ __config__.checkAndRestore({
 
 if (getCoreAPILevel() >= 6){
 	var resources = Resources.getResourceList();
-	resources["shaders_ultra.zip"] = __config__.access("graphics.advanced_shaders");
+	resources["ultra_shader.zip"] = __config__.access("graphics.advanced_shaders");
 	Resources.setResourceList(resources);
 }
 else {

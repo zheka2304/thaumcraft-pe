@@ -1,0 +1,18 @@
+{
+	"particles_opaque": {
+		"defines": [ "ENABLE_FOG" ],
+		"states": [ "DisableAlphaWrite" ],
+
+		"vertexShader": "shaders/color_uv.vertex",
+		"fragmentShader": "shaders/color_texture.fragment"
+	},
+
+	"particles_alpha": {
+		"defines": [ "ALPHA_TEST", "ENABLE_FOG", "BLEND" ],
+		"states": [ "Blending", "DisableDepthWrite", "EnableAlphaToCoverage" ],
+		"blendDst": "One",
+
+		"vertexShader" : "shaders/particle.vertex",
+		"fragmentShader" : "shaders/particle.fragment"
+	}
+}

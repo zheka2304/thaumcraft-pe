@@ -23,10 +23,10 @@ aspect/reaction.js
 aspect/storage.js
 aspect/items.js
 
-spell/physics/spell.js
-spell/physics/projectile.js
-spell/render/trajectory.js
-spell/render/render.js
+spell/animation/texture.js
+spell/animation/helper.js
+spell/animation/render.js
+spell/animation/handler.js
 
 research/registry.js
 research/pages/basic.js

@@ -1,4 +1,5 @@
 {
 	"resources.zip": true,
-	"shaders_ultra.zip": false
+	"ultra_shader.zip": false,
+	"spell_shader.zip": true
 }

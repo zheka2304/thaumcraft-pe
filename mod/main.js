@@ -31,7 +31,7 @@ __config__.checkAndRestore({
 
 if (getCoreAPILevel() >= 6){
 	var resources = Resources.getResourceList();
-	resources["shaders_ultra.zip"] = __config__.access("graphics.advanced_shaders");
+	resources["ultra_shader.zip"] = __config__.access("graphics.advanced_shaders");
 	Resources.setResourceList(resources);
 }
 else {
@@ -2839,195 +2839,100 @@ AspectRegistry.registerAspectsForItem(466, -1, {lucrum: 64, messis: 1, metallum:
 
 
 
-/*
- spell seed is 2d array
- [
-	[1, 2, 3, ...],
-	[4, 5, 6, ...],
-	...
- ]
- 
- 
-*/
+function SpellAnimationTexture(name, radius){
+	this.name = name;
+	this.radius = radius;
+	
+	this.convertSize = function(size){
+		return parseInt(size * 256 / (radius * 2));
+	}
+	
+	this.getSkin = function(){
+		return this.name;
+	}
+}
 
-function Spell(seed){
-	this.seed = seed;
+function SpellTextureSet(textures){
+	this.textures = textures || [];
 	
-	this.projectiles = [];
-	
-	
-	
-	this.addProjectile = function(projectile){
-		this.projectiles.push(projectile);
-		projectile.setSeed(this.seed);
+	this.getRandom = function(){
+		return this.textures[parseInt(Math.random() * this.textures.length)];
 	}
 	
-	// debug
-	this.addProjectile(new SpellProjectile(this));
-	
-	this.update = function(){
-		for (var i in this.projectiles){
-			this.projectiles[i].update();
-		}
+	this.get = function(index){
+		return this.textures[index];
 	}
+}
+
+var TEXTURE_SET_FIRE = new SpellTextureSet([
+	new SpellAnimationTexture("spell_fire_0.png", 128),
+	new SpellAnimationTexture("spell_fire_1.png", 128),
+	new SpellAnimationTexture("spell_fire_2.png", 128),
+]);
+
+var TEXTURE_SET_MYSTIC = new SpellTextureSet([
+	new SpellAnimationTexture("spell_mystic_0.png", 128),
+	new SpellAnimationTexture("spell_mystic_1.png", 128),
+	new SpellAnimationTexture("spell_mystic_2.png", 128),
+]);
+
+var TEXTURE_SET_LIFE = new SpellTextureSet([
+	new SpellAnimationTexture("spell_life_0.png", 128),
+]);
+
+var TEXTURE_SET_ARCANE = new SpellTextureSet([
+	new SpellAnimationTexture("spell_arcane_0.png", 128),
+	new SpellAnimationTexture("spell_arcane_1.png", 128),
+	new SpellAnimationTexture("spell_arcane_2.png", 128),
+	new SpellAnimationTexture("spell_arcane_3.png", 128),
+]);
+
+
+
+
+function SpellAnimation(x, y, z){
+	this.parent = Animation.Base;
+	this.parent(x, y, z);
 	
-	this.loadAt = function(coords, rotation){
-		for (var i in this.projectiles){
-			this.projectiles[i].loadAt(coords, rotation);
-		}
-		UpdatableAPI.addUpdatable(this);
+	this.describeSpell = function(texture, size, rotation){
+		var size = texture.convertSize(size);
+		var render = new Render();
+		render.setPart("body", [{
+			type: "box",
+			coords: {
+				x: 0,
+				y: 25,
+				z: 0,
+			},
+			size: {
+				x: size,
+				y: size,
+				z: 0
+			},
+			uv: {
+				x: 0,
+				y: 0
+			}
+		}], {width: size * 2, height: size * 2});
+		
+		this.describe({
+			renderAPI: render,
+			skin: texture.getSkin()
+		});
+		
+		return this;
 	}
 }
 
 Callback.addCallback("ItemUse", function(coords, item, block){
 	if (item.id == 264){
-		var spell = new Spell(
-			[Math.random() * 10, Math.random() * 10, Math.random() * 10, 19, 8, 38, 11]
-		);
-		//spell.loadAt({x: coords.relative.x + .5, y: coords.relative.y + .5, z: coords.relative.z + .5} , null);
+		var textureSet = [TEXTURE_SET_MYSTIC, TEXTURE_SET_FIRE, TEXTURE_SET_ARCANE, TEXTURE_SET_LIFE][parseInt(Math.random() * 4)];
+		var texture = textureSet.getRandom();
+		(new SpellAnimation(coords.relative.x + .5, coords.relative.y + 1.5, coords.relative.z + .5).describeSpell(texture, 32)).load();
 	}
 });
 
 
-function SpellProjectile(spell){
-	this.spell = spell;
-	
-	this.setSeed = function(seed){
-		this.seed = seed;
-	}
-	
-	this.speed = 64;
-	
-	this.update = function(){
-		for (var i = 0; i < this.speed; i++){
-			SpellRenderHelper.renderProjectile(this, this.position++);
-		}
-	}
-	
-	this.loadAt = function(coords, rotation){
-		this.trajectory = new SpellTrajectory(this.seed);
-		this.trajectory.build();
-		this.trajectory.convert(coords, rotation);
-		this.position = 0;
-	}
-}
-
-
-
-function SpellTrajectory(seed){
-	this.rawPath = [];
-	this.realPath = [];
-	
-	this.setSeed = function(seed){
-		this.seed = seed;
-		this.trajectorySeed = [];
-		for (var i in this.seed){
-			this.trajectorySeed[i] = 0;
-			for (var j in this.seed){
-				if (i != j && (this.seed[i] % this.seed[j] == 0)){
-					this.trajectorySeed[i] = this.seed[i] / this.seed[j]; 
-					break;
-				}
-			}
-		}
-		
-	}
-	
-	this.setSeed(seed);
-	
-	this.getStart = function(){
-		return this.rawPath[0] || {x: 0, y: 0, z: 0};
-	}
-	
-	this.getEnd = function(){
-		return this.rawPath[this.rawPath.length - 1] || {x: 0, y: 0, z: 0};
-	}
-	
-	this.push = function(coords){
-		this.rawPath.push(coords);
-	}
-	
-	this.PERIOD = 16;
-	
-	this.build = function(){
-		var speed = .2;
-		var dir = {
-			yaw: 0,
-			pitch: 0.001
-		};
-		var acc = {
-			yaw: 0,
-			pitch: 0
-		}
-		
-		var step = function(x){
-			x = Math.floor(x * Math.PI);
-			return Math.pow(Math.sin(x), 1);
-		}
-		
-		var ITERATIONS = 256;
-		
-		for (var i = 0; i < ITERATIONS; i++){
-			var coords = this.getEnd();
-			
-			var index = parseInt(i / this.PERIOD) % this.trajectorySeed.length
-			
-			if (i % this.trajectorySeed.length == 0){
-				acc.yaw = 0;
-			}
-			var value = this.seed[index];	
-			
-			var coords2 = {
-				x: coords.x + Math.sin(dir.yaw) * Math.cos(dir.pitch) * speed,
-				y: coords.y + Math.sin(dir.pitch),
-				z: coords.z + Math.cos(dir.yaw) * Math.cos(dir.pitch) * speed
-			}
-			
-			dir.yaw += acc.yaw;
-			dir.pitch += acc.pitch;
-			
-			var value = 0;
-			for (var j in this.seed){
-				var k = Math.pow(2, j);
-				value += step(Math.floor(this.seed[j]) + i / ITERATIONS * k) / k;
-				break;
-			}		
-			acc.yaw = value / 20;
-			
-			this.push({
-				x: coords.x,
-				y: value,
-				z: i * .05
-			});
-			//this.push(coords2);
-		}
-	} 
-	
-	this.convert = function(start, rotation){
-		this.realPath = [];
-		for (var i in this.rawPath){
-			var coords = this.rawPath[i];
-			this.realPath[i] = {
-				x: start.x + coords.x,
-				y: start.y + coords.y,
-				z: start.z + coords.z,
-			};
-		}
-	}
-}
-
-
-var SpellRenderHelper = {
-	renderProjectile: function(projectile, position){
-		if (projectile.trajectory){
-			var coords1 = projectile.trajectory.realPath[position];
-			var coords2 = projectile.trajectory.realPath[position + 1];
-			if (coords1 && coords2){
-				Particles.line(31, coords1, coords2, .04);
-			}
-		}
-	}
-}
 
 
 var RESEARCH_PROGRESS_MULTIPLIER = .5;

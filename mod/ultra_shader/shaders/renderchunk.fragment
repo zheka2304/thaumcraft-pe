@@ -1,0 +1,203 @@
+// __multiversion__
+// This signals the loading code to prepend either #version 100 or #version 300 es as apropriate.
+
+// To use centroid sampling we need to have version 300 es shaders, which requires changing:
+// attribute to in
+// varying to out when in vertex shaders or in when in fragment shaders
+// defining an out vec4 FragColor and replacing uses of gl_FragColor with FragColor
+// texture2D to texture
+#if __VERSION__ >= 300
+
+// version 300 code
+
+#ifdef MSAA_FRAMEBUFFER_ENABLED
+#define _centroid centroid
+#else
+#define _centroid
+#endif
+
+#if defined(TEXEL_AA) && defined(TEXEL_AA_FEATURE)
+_centroid in highp vec2 uv0;
+_centroid in highp vec2 uv1;
+#else
+_centroid in vec2 uv0;
+_centroid in vec2 uv1;
+#endif
+
+
+
+#define varying in
+#define texture2D texture
+out vec4 FragColor;
+#define gl_FragColor FragColor
+
+#else
+
+// version 100 code
+varying vec2 uv0;
+varying vec2 uv1;
+
+#endif
+
+varying vec3 look_vector;
+// quality is dis / 16
+varying float quality;
+varying vec4 color;
+
+#ifdef FOG
+varying vec4 fogColor;
+#endif
+
+#ifdef NEAR_WATER
+varying float cameraDist;
+#endif
+
+#include "shaders/util.h"
+
+uniform sampler2D TEXTURE_0;
+uniform sampler2D TEXTURE_1;
+uniform sampler2D TEXTURE_2;
+
+uniform highp float TIME;
+
+
+
+float random(float x){
+	return fract(sin(x) * 428.123);
+}
+
+float srandom(float x){
+	float r1 = random(floor(x));
+	float r2 = random(floor(x) + 1.0);
+	return mix(r1, r2, smoothstep(0.0, 1.0, fract(x)));
+}
+
+float srandom2d(float x, float y){
+	float r1 = srandom(x + floor(y) * 10.0);
+	float r2 = srandom(x + floor(y) * 10.0 + 10.0);
+	return mix(r1, r2, smoothstep(0.0, 1.0, fract(y)));
+}
+
+float srandom3d(float x, float y, float z){
+	float add = floor(z) * 100.0;
+	float r1 = srandom2d(x + add, y + add);
+	float r2 = srandom2d(x + add + 100.0, y + add + 100.0);
+	return mix(r1, r2, fract(z));
+}
+
+
+float water_wave(vec2 pos){
+	return pow(mod(srandom2d(pos.x, pos.y) + TIME * .6, 0.5) / 0.5 - 0.5, 2.0);
+}
+
+vec3 water_normal(vec2 pos){
+	pos *= vec2(64.0, 32.0);
+	//pos = floor(pos * 16.0) / 16.0; 
+	//pos.x += TIME * 0.4;
+	pos *= 4.0;
+	//pos.y *= .33;
+	return vec3(water_wave(pos), 1.0, water_wave(pos - vec2(100.0))) * .5;
+}
+
+float skymap(vec3 pos, vec3 ref){
+	pos *= vec3(64.0, 1.0, 32.0) * .5;
+	pos += normalize(ref) * 10.0;
+	return pow(srandom2d(pos.x, pos.z) * .7 + srandom2d(pos.x * 2.0, pos.z * 2.0 + 100.0) * .3, 2.0);
+}
+
+float angle_between_vecs(vec3 v1, vec3 v2){
+	float sum = v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+	return acos(sum / length(v1) / length(v2));
+}
+
+vec3 skycolor(vec3 base_color, float angle){
+	return base_color * (pow(abs(angle), 2.0) / (3.14159 / 4.0) * .7 + .3);
+}
+
+vec3 blinking_filter(vec3 origin_color, float blink_factor){
+	vec3 gray_scale = vec3((origin_color.r + origin_color.b + origin_color.g) / 3.0);
+	vec3 delta = origin_color - gray_scale;
+	float saturation = blink_factor * 1.25 + 1.0;
+	float brightness = blink_factor * .7 + .8;
+	return (gray_scale + delta * saturation) * brightness;
+}
+
+
+
+void main()
+{
+#if !defined(TEXEL_AA) || !defined(TEXEL_AA_FEATURE)
+	vec4 diffuse = texture2D( TEXTURE_0, uv0 );
+#else
+	vec4 diffuse = texture2D_AA(TEXTURE_0, uv0 );
+#endif
+	
+	vec4 light_tex = texture2D( TEXTURE_1, uv1 );
+	
+	if (quality < 0.5 && diffuse.a > 0.89 && diffuse.a < 0.91){
+		vec3 color = diffuse.rgb;
+		vec3 normal = water_normal(uv0.xy);
+		vec3 refrlected = reflect(-look_vector, normal);
+		float angle = angle_between_vecs(vec3(0.0, 1.0, 0.0), refrlected);
+		diffuse.rgb = skycolor(color * light_tex.r, angle);
+		
+		vec2 pos = uv0.xy;
+		diffuse.rgb += skymap(vec3(pos.x, 0.0, pos.y), refrlected) * vec3(1.0, 1.0, color.b);
+	}
+	vec4 inColor = color;
+	
+	
+	if (quality < 1.25 && diffuse.a > 0.71 && diffuse.a < 0.89){
+		vec2 pos = uv0.xy;
+		pos *= vec2(64.0, 32.0);
+		pos = floor(pos * 16.0) / 16.0;
+		pos *= 10.0;
+		float power = max(0.0, sin(TIME * 1.5 + srandom2d(pos.x, pos.y) * 3.14 * 4.0) - .3) * 1.0; 
+		diffuse.rgb = blinking_filter(diffuse.rgb, power);
+	}
+	else{
+		diffuse = diffuse * light_tex;
+	}
+	
+#ifdef SEASONS_FAR
+	diffuse.a = 1.0;
+	inColor.b = 1.0;
+#endif
+
+#ifdef ALPHA_TEST
+	#ifdef ALPHA_TO_COVERAGE
+		float alphaThreshold = .05;
+	#else
+		float alphaThreshold = .5;
+	#endif
+	if(diffuse.a < alphaThreshold)
+		discard;
+#endif
+	
+	
+#ifndef SEASONS
+
+#if !defined(ALPHA_TEST) && !defined(BLEND)
+	diffuse.a = inColor.a;
+#elif defined(BLEND)
+	diffuse.a *= inColor.a;
+	#ifdef NEAR_WATER
+		float alphaFadeOut = clamp(cameraDist, 0.0, 1.0);
+		diffuse.a = mix(diffuse.a, 1.0, alphaFadeOut);
+	#endif
+#endif	
+	
+	diffuse.rgb *= inColor.rgb;
+#else
+	vec2 uv = inColor.xy;
+	diffuse.rgb *= mix(vec3(1.0,1.0,1.0), texture2D( TEXTURE_2, uv).rgb*2.0, inColor.b);
+	diffuse.rgb *= inColor.aaa;
+	diffuse.a = 1.0;
+#endif
+
+#ifdef FOG
+	diffuse.rgb = mix( diffuse.rgb, fogColor.rgb, fogColor.a );
+#endif
+
+	gl_FragColor = diffuse;
+}
